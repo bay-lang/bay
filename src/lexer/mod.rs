@@ -3,7 +3,7 @@
 #[derive(Debug)]
 pub struct TokenStream<'a> {
     tokens: Vec<Token<'a>>,
-    idx: usize,
+    idx:    usize,
 }
 
 impl<'a> TokenStream<'a> {
@@ -14,7 +14,7 @@ impl<'a> TokenStream<'a> {
     pub fn cursor(&self) -> Cursor {
         Cursor {
             tokens: &self.tokens,
-            idx: 0,
+            idx:    0,
         }
     }
 }
@@ -25,8 +25,8 @@ pub enum LexerError {
     UnknownToken(Span),
     UnexpectedEof(Span),
     UnmatchedDelimiter {
-        start: Span,
-        end: Span,
+        start:    Span,
+        end:      Span,
         expected: Delim,
     },
     UnknownChar(Span),
@@ -41,7 +41,7 @@ impl LexerError {
 #[derive(Copy, Clone, Debug)]
 pub struct Cursor<'a> {
     tokens: &'a [Token<'a>],
-    idx: usize,
+    idx:    usize,
 }
 
 impl<'a> Cursor<'a> {
@@ -148,7 +148,7 @@ pub struct Span {
     // the offset of the character
     start: usize,
     // the offset of the last character included in the span
-    end: usize,
+    end:   usize,
 }
 
 impl Span {
@@ -185,7 +185,7 @@ impl Span {
 
 #[derive(Copy, Clone, Debug)]
 pub struct Str<'a> {
-    span: Span,
+    span:  Span,
     value: &'a str,
 }
 
@@ -204,9 +204,9 @@ impl<'a> Str<'a> {
 
 #[derive(Debug)]
 pub struct Lit<'a> {
-    span: Span,
-    kind: LitKind,
-    value: Str<'a>,
+    span:   Span,
+    kind:   LitKind,
+    value:  Str<'a>,
     prefix: Option<Str<'a>>,
     suffix: Option<Str<'a>>,
 }
@@ -254,7 +254,7 @@ pub enum LitKind {
 
 #[derive(Debug)]
 pub struct Punct<'a> {
-    value: Str<'a>,
+    value:   Str<'a>,
     spacing: Spacing,
 }
 
@@ -284,8 +284,8 @@ pub enum Spacing {
 
 #[derive(Debug)]
 pub struct Block<'a> {
-    span: Span,
-    delim: Delim,
+    span:   Span,
+    delim:  Delim,
     tokens: TokenStream<'a>,
 }
 
@@ -321,7 +321,7 @@ pub enum Delim {
 
 #[derive(Debug)]
 pub struct Ident<'a> {
-    span: Span,
+    span:  Span,
     value: Str<'a>,
 }
 
@@ -378,8 +378,8 @@ impl<'a> TokenStream<'a> {
                 let end_delim = c.into();
                 if delim != end_delim {
                     return Err(LexerError::UnmatchedDelimiter {
-                        start: Span::new(start, start),
-                        end: Span::new(i, i),
+                        start:    Span::new(start, start),
+                        end:      Span::new(i, i),
                         expected: delim,
                     });
                 }
@@ -622,8 +622,8 @@ impl<'a> TokenStream<'a> {
         if delim_stack.len() > 1 {
             let (delim, start, tokens) = delim_stack.pop().unwrap();
             return Err(LexerError::UnmatchedDelimiter {
-                start: Span::new(start, start),
-                end: Span::new(s.len(), s.len()),
+                start:    Span::new(start, start),
+                end:      Span::new(s.len(), s.len()),
                 expected: delim,
             });
         } else {
