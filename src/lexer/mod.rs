@@ -20,7 +20,7 @@ impl<'a> TokenStream<'a> {
 }
 
 #[derive(Debug)]
-pub enum LexerError {
+pub enum Error {
     UnexpectedToken(Span),
     UnknownToken(Span),
     UnexpectedEof(Span),
@@ -32,7 +32,7 @@ pub enum LexerError {
     UnknownChar(Span),
 }
 
-impl LexerError {
+impl Error {
     pub fn span() -> Span {
         todo!()
     }
@@ -87,10 +87,7 @@ impl<'a> Token<'a> {
     }
 
     pub fn is_lit(&self) -> bool {
-        match self {
-            Token::Lit(_) => true,
-            _ => false,
-        }
+        matches!(self, Token::Lit(_))
     }
 
     pub fn as_lit(&self) -> Option<&Lit<'a>> {
@@ -101,10 +98,7 @@ impl<'a> Token<'a> {
     }
 
     pub fn is_punct(&self) -> bool {
-        match self {
-            Token::Punct(_) => true,
-            _ => false,
-        }
+        matches!(self, Token::Punct(_))
     }
 
     pub fn as_punct(&self) -> Option<&Punct<'a>> {
@@ -115,10 +109,7 @@ impl<'a> Token<'a> {
     }
 
     pub fn is_block(&self) -> bool {
-        match self {
-            Token::Block(_) => true,
-            _ => false,
-        }
+        matches!(self, Token::Block(_))
     }
 
     pub fn as_block(&self) -> Option<&Block<'a>> {
@@ -129,10 +120,7 @@ impl<'a> Token<'a> {
     }
 
     pub fn is_ident(&self) -> bool {
-        match self {
-            Token::Ident(_) => true,
-            _ => false,
-        }
+        matches!(self, Token::Ident(_))
     }
 
     pub fn as_ident(&self) -> Option<&Ident<'a>> {
@@ -362,7 +350,7 @@ impl From<&str> for Delim {
 }
 
 impl<'a> TokenStream<'a> {
-    fn parse(s: &'a str) -> Result<TokenStream<'a>, LexerError> {
+    fn parse(s: &'a str) -> Result<TokenStream<'a>, Error> {
         let mut delim_stack = Vec::new();
         delim_stack.push((Delim::Invis, 0, Vec::new()));
 
@@ -377,7 +365,7 @@ impl<'a> TokenStream<'a> {
                 let (delim, start, tokens) = delim_stack.pop().unwrap();
                 let end_delim = c.into();
                 if delim != end_delim {
-                    return Err(LexerError::UnmatchedDelimiter {
+                    return Err(Error::UnmatchedDelimiter {
                         start:    Span::new(start, start),
                         end:      Span::new(i, i),
                         expected: delim,
@@ -391,7 +379,7 @@ impl<'a> TokenStream<'a> {
             } else if Self::is_punct(c) {
                 Some(Token::Punct(Punct::new(
                     Str::new(Span::new(i, i), s),
-                    if iter.peek().map(|c| Self::is_punct((c.1))).unwrap_or(false) {
+                    if iter.peek().is_some_and(|c| Self::is_punct(c.1)) {
                         Spacing::Together
                     } else {
                         Spacing::Alone
@@ -410,8 +398,7 @@ impl<'a> TokenStream<'a> {
                 let prefix = if Self::is_letter(c) || c == '_' {
                     while iter
                         .peek()
-                        .map(|c| Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_')
-                        .unwrap_or(false)
+                        .is_some_and(|c| Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_')
                     {
                         (prefix_end, last) = iter.next().unwrap();
                     }
@@ -420,11 +407,7 @@ impl<'a> TokenStream<'a> {
                     // starts with a number
                     // - parse either an int or a prefix for anything
                 } else if Self::is_num(c) {
-                    while iter
-                        .peek()
-                        .map(|c| Self::is_num(c.1) || c.1 == '_')
-                        .unwrap_or(false)
-                    {
+                    while iter.peek().is_some_and(|c| Self::is_num(c.1) || c.1 == '_') {
                         (prefix_end, last) = iter.next().unwrap();
                     }
                     let span = Span::new(i, prefix_end);
@@ -438,20 +421,16 @@ impl<'a> TokenStream<'a> {
                         let (mut end, mut maybe_backslash) = iter.next().unwrap();
                         // raw string or raw ident
                         let mut hashes = 1;
-                        while iter.peek().map(|c| c.1 == '#').unwrap_or(false) {
+                        while iter.peek().is_some_and(|c| c.1 == '#') {
                             maybe_backslash = iter.next().unwrap().1;
                             hashes += 1;
                         }
                         if let Some(peek) = iter.peek() {
                             // raw ident
                             if Self::is_letter(peek.1) {
-                                while iter
-                                    .peek()
-                                    .map(|c| {
-                                        Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_'
-                                    })
-                                    .unwrap_or(false)
-                                {
+                                while iter.peek().is_some_and(|c| {
+                                    Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_'
+                                }) {
                                     end = iter.next().unwrap().0;
                                 }
                                 let span = Span::new(i, end);
@@ -469,12 +448,8 @@ impl<'a> TokenStream<'a> {
                                 // raw string
                                 loop {
                                     let mut found_hashes = 0;
-                                    if iter
-                                        .peek()
-                                        .map(|c| c.1 == '"' && last != '\\')
-                                        .unwrap_or(false)
-                                    {
-                                        while iter.peek().map(|c| c.1 == '#').unwrap_or(false) {
+                                    if iter.peek().is_some_and(|c| c.1 == '"' && last != '\\') {
+                                        while iter.peek().is_some_and(|c| c.1 == '#') {
                                             (end, last) = iter.next().unwrap();
                                             found_hashes += 1;
                                         }
@@ -486,22 +461,14 @@ impl<'a> TokenStream<'a> {
                                     end = iter.next().unwrap().0;
                                 }
                                 let span = Span::new(i, end);
-                                let suffix = if iter
-                                    .peek()
-                                    .map(|c| {
-                                        Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_'
-                                    })
-                                    .unwrap_or(false)
-                                {
+                                let suffix = if iter.peek().is_some_and(|c| {
+                                    Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_'
+                                }) {
                                     let start = iter.next().unwrap().0;
                                     let mut end = start;
-                                    while iter
-                                        .peek()
-                                        .map(|c| {
-                                            Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_'
-                                        })
-                                        .unwrap_or(false)
-                                    {
+                                    while iter.peek().is_some_and(|c| {
+                                        Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_'
+                                    }) {
                                         end = iter.next().unwrap().0;
                                     }
                                     Some(Str::new(Span::new(start, end), s))
@@ -516,31 +483,27 @@ impl<'a> TokenStream<'a> {
                                     suffix,
                                 )))
                             } else {
-                                return Err(LexerError::UnknownToken(Span::new(i, peek.0)));
+                                return Err(Error::UnknownToken(Span::new(i, peek.0)));
                             }
                         } else {
-                            return Err(LexerError::UnexpectedEof(Span::new(s.len(), s.len())));
+                            return Err(Error::UnexpectedEof(Span::new(s.len(), s.len())));
                         }
                     } else if (peek.1 == '"' || peek.1 == '\'') && last != '\\' {
                         // string or char with a prefix and maybe a suffix
                         let (start, ch) = iter.next().unwrap();
                         let mut end = start;
-                        while iter.peek().map(|c| c.1 != ch).unwrap_or(false) {
+                        while iter.peek().is_some_and(|c| c.1 != ch) {
                             end = iter.next().unwrap().0;
                         }
                         let span = Span::new(start, end);
-                        let suffix = if iter
-                            .peek()
-                            .map(|c| Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_')
-                            .unwrap_or(false)
-                        {
+                        let suffix = if iter.peek().is_some_and(|c| {
+                            Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_'
+                        }) {
                             let start = iter.next().unwrap().0;
                             let mut end = start;
-                            while iter
-                                .peek()
-                                .map(|c| Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_')
-                                .unwrap_or(false)
-                            {
+                            while iter.peek().is_some_and(|c| {
+                                Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_'
+                            }) {
                                 end = iter.next().unwrap().0;
                             }
                             Some(Str::new(Span::new(start, end), s))
@@ -563,11 +526,9 @@ impl<'a> TokenStream<'a> {
                         // this is now the suffix for an int
                         let start = iter.next().unwrap().0;
                         let mut end = start;
-                        while iter
-                            .peek()
-                            .map(|c| Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_')
-                            .unwrap_or(false)
-                        {
+                        while iter.peek().is_some_and(|c| {
+                            Self::is_letter(c.1) || Self::is_num(c.1) || c.1 == '_'
+                        }) {
                             end = iter.next().unwrap().0;
                         }
                         let suffix_span = Span::new(start, end);
@@ -611,7 +572,7 @@ impl<'a> TokenStream<'a> {
                     }
                 }
             } else {
-                return Err(LexerError::UnknownChar(Span::new(i, i)));
+                return Err(Error::UnknownChar(Span::new(i, i)));
             };
             last = c;
             match token {
@@ -621,57 +582,62 @@ impl<'a> TokenStream<'a> {
         }
         if delim_stack.len() > 1 {
             let (delim, start, tokens) = delim_stack.pop().unwrap();
-            return Err(LexerError::UnmatchedDelimiter {
+            Err(Error::UnmatchedDelimiter {
                 start:    Span::new(start, start),
                 end:      Span::new(s.len(), s.len()),
                 expected: delim,
-            });
+            })
         } else {
             let (_, _, tokens) = delim_stack.pop().unwrap();
-            return Ok(TokenStream::new(tokens));
+            Ok(TokenStream::new(tokens))
         }
     }
 
     fn is_punct(c: char) -> bool {
-        match c {
-            '&' | '=' | '@' | '^' | ':' | ',' | '$' | '.' | '>' | '<' | '-' | '+' | '!' | '|'
-            | '%' | '#' | '?' | ';' | '/' | '*' | '~' | '`' | '\\' => true,
-            _ => false,
-        }
+        matches!(
+            c,
+            '&' | '='
+                | '@'
+                | '^'
+                | ':'
+                | ','
+                | '$'
+                | '.'
+                | '>'
+                | '<'
+                | '-'
+                | '+'
+                | '!'
+                | '|'
+                | '%'
+                | '#'
+                | '?'
+                | ';'
+                | '/'
+                | '*'
+                | '~'
+                | '`'
+                | '\\'
+        )
     }
 
     fn is_whitespace(c: char) -> bool {
-        match c {
-            ' ' | '\t' | '\r' | '\n' => true,
-            _ => false,
-        }
+        matches!(c, ' ' | '\t' | '\r' | '\n')
     }
 
     fn is_open_delim(c: char) -> bool {
-        match c {
-            '(' | '[' | '{' => true,
-            _ => false,
-        }
+        matches!(c, '(' | '[' | '{')
     }
 
     fn is_close_delim(c: char) -> bool {
-        match c {
-            ')' | ']' | '}' => true,
-            _ => false,
-        }
+        matches!(c, ')' | ']' | '}')
     }
 
     fn is_letter(c: char) -> bool {
-        match c {
-            'a'..='z' | 'A'..='Z' => true,
-            _ => false,
-        }
+        c.is_ascii_alphabetic()
     }
 
     fn is_num(c: char) -> bool {
-        match c {
-            '0'..='9' => true,
-            _ => false,
-        }
+        c.is_ascii_digit()
     }
 }
