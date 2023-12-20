@@ -1,6 +1,13 @@
 - Define product types (structs)
 - Define sum types (enums)
 - Define shared behavior (traits)
-- Nullability with types like i64? and unwrapping with operator
+- Nullability with types like i64? and unwrapping with ? operator
 - Universal error enum with tag word that describes the type, then pointer word that points to the associated data. The ! operator is used to unwrap errors
-
+- `const {}` blocks that are evaluated at compile time
+- Type narrowing/subtypes/subsets for sum types
+- The compiler and type system are all embedded in the standard library to allow runtime compilation and execution of embedded programs
+- Macro system for manipulating code at compile time, would like to find a way to have some that will take in raw tokens and others that will take in type-checked token trees
+- Simple concurrency with a model similar to Go's, you can `.await` a function to have it run concurrently as a task, or `.unawait` to get a handle that can be used to manipulate and run the function later
+- Can pattern match in function definitions
+- Named function arguments
+- Try contexts or similar `try fn` or `try {}` that allow you to short circuit execution with a `.try` keyword, also a similar concept maybe for nullability and error handling maybe with `try!` and `try?` definitions/blocks
