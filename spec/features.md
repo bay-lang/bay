@@ -8,6 +8,7 @@
 - The compiler and type system are all embedded in the standard library to allow runtime compilation and execution of embedded programs
 - Macro system for manipulating code at compile time, would like to find a way to have some that will take in raw tokens and others that will take in type-checked token trees
 - Simple concurrency with a model similar to Go's, you can `.await` a function to have it run concurrently as a task, or `.unawait` to get a handle that can be used to manipulate and run the function later
-- Can pattern match in function definitions
+- Perhaps have the compiler manage concurrency/async automatically, so that in a typical situation you can simple call a function and the compiler will figure out whether it should run in syncronously or concurrently
+- Can pattern match in function definitions like Haskell and other function languages/have function overloads
 - Named function arguments
 - Try contexts or similar `try fn` or `try {}` that allow you to short circuit execution with a `.try` keyword, also a similar concept maybe for nullability and error handling maybe with `try!` and `try?` definitions/blocks
