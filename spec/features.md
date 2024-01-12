@@ -12,3 +12,4 @@
 - Can pattern match in function definitions like Haskell and other function languages/have function overloads
 - Named function arguments
 - Try contexts or similar `try fn` or `try {}` that allow you to short circuit execution with a `.try` keyword, also a similar concept maybe for nullability and error handling maybe with `try!` and `try?` definitions/blocks
+- Namespaces for crates, like `@mrvillage/ui` from TypeScript
