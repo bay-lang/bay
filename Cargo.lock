@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "bay"
+name = "parser"
 version = "0.1.0"
