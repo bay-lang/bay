@@ -1,0 +1,8 @@
+[package]
+name = "regex"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+proc-macro2 = "1.0.83"
+regex-macros = { path = "regex-macros" }

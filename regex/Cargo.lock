@@ -3,10 +3,6 @@
 version = 3
 
 [[package]]
-name = "parser"
-version = "0.1.0"
-
-[[package]]
 name = "proc-macro2"
 version = "1.0.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -29,7 +25,6 @@ name = "regex"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",
- "regex-macros",
 ]
 
 [[package]]
